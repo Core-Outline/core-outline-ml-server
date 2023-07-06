@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
+import copy
 from datetime import datetime
 from app_container.repositories.pandas import convert_dict_to_df, convert_df_to_dict
-from config.app_configs import time_units, date_format
+from config.app_configs import time_units, date_format, customer_segments
+from app_container.scripts.customer import createRFMTable, MRR_Class
 
 
 class MetricService():
@@ -11,7 +13,6 @@ class MetricService():
 
     def recurringRevenue(self, metric):
         df = convert_dict_to_df(metric['data'])
-        df = df.dropna()
         df = df.rename(
             columns={metric['date_column']: "date", metric['amount_column']: "amount"})
         df.groupby("date").amount.sum().reset_index()
@@ -19,7 +20,7 @@ class MetricService():
                       for dt in df['date']]
         df['date'] = pd.to_datetime(df['date'])
         df = df.set_index('date')
-        df = df.amount.resample(time_units[metric['time_units']]).mean()
+        df = df.amount.resample(time_units[metric['time_units']]).sum()
         df = df.reset_index()
 
         df['date'] = [datetime.strptime(np.datetime_as_string(
@@ -29,11 +30,74 @@ class MetricService():
 
     def lifetimeValue(self, metric):
         df = convert_dict_to_df(metric['data'])
-        df = df.dropna()
         df = df.rename(
             columns={metric['identifier_column']: "identifier",
                      metric['amount_column']: "amount"}
         )
         df.groupby('identifier').amout.sum()
         df = df.reset_index()
+        return convert_df_to_dict(df)
+
+    def customerSegmentation(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.dropna()
+        RFM_Segment = createRFMTable(
+            df=df, name_col=metric['name_column'], date_col=metric['date_column'], amount_col=metric['amount_column'])
+        customers = [
+            i for i in RFM_Segment[metric['name_column']].value_counts().index]
+
+        for customer in customers:
+            data = metric['data'].copy()
+            print(customer)
+            indices = [i for i, name in enumerate(
+                metric['data'][metric['name_column']]) if name == customer]
+            for key in data.keys():
+                data[key] = [data[key][i] for i in indices]
+            cust_df = convert_dict_to_df(data)
+            cust_df = cust_df.rename(
+                columns={metric['date_column']: "date", metric['amount_column']: "amount"})
+            cust_df.groupby("date").amount.sum().reset_index()
+            cust_df['date'] = [datetime.strptime(dt, date_format)
+                               for dt in cust_df['date']]
+            cust_df['date'] = pd.to_datetime(cust_df['date'])
+            cust_df = cust_df.set_index('date')
+            cust_df = cust_df.amount.resample(
+                time_units[metric['time_units']]).mean()
+            cust_df = cust_df.reset_index()
+
+            cust_df['date'] = [datetime.strptime(np.datetime_as_string(
+                dt, unit='D'), '%Y-%m-%d') for dt in cust_df['date'].values]
+            cust_df['date'] = cust_df['date'].astype("str")
+
+            RFM_Segment.loc[RFM_Segment[metric['name_column']]
+                            == customer, 'MRR'] = cust_df['amount'].mean()
+
+            quantiles = RFM_Segment['MRR'].quantile(
+                q=[0.25, 0.5, 0.75]).to_dict()
+            RFM_Segment['MRR']
+            RFM_Segment["MRR_Quartile"] = RFM_Segment['MRR'].apply(
+                MRR_Class, args=("MRR", quantiles,))
+
+        if ('focus_segment' in metric.keys()):
+            reference = customer_segments[metric['focus_segment']]['reference']
+            value = customer_segments[metric['focus_segment']]['value']
+            RFM_Segment = RFM_Segment.loc[RFM_Segment[reference] == value]
+        return convert_df_to_dict(RFM_Segment)
+
+    def expenses(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.rename(
+             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+        )
+        df.groupby("date").amount.sum().reset_index()
+        df['date'] = [datetime.strptime(dt, date_format)
+                      for dt in df['date']]
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.set_index('date')
+        df = df.amount.resample(time_units[metric['time_units']]).sum()
+        df = df.reset_index()
+
+        df['date'] = [datetime.strptime(np.datetime_as_string(
+            dt, unit='D'), '%Y-%m-%d') for dt in df['date'].values]
+        df['date'] = df['date'].astype("str")
         return convert_df_to_dict(df)

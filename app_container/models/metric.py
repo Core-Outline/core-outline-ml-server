@@ -10,3 +10,9 @@ class Metric:
 
     def lifetime_value(self, metric):
         return self.metricService.lifetimeValue(metric)
+
+    def customer_segmentation(self, metric):
+        return self.metricService.customerSegmentation(metric)
+    
+    def expenses(self, metric):
+        return self.metricService.expenses(metric)

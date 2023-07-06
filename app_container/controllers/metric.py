@@ -11,7 +11,12 @@ def get_recurring_revenue():
     return jsonify((metric.recurring_revenue(req)))
 
 
-@metric_controller.route('/recurring-revenue', methods=['POST'])
-def get_ltv():
+@metric_controller.route('/customer-segmentation', methods=['POST'])
+def get_segments():
     req = request.get_json()
-    return jsonify((metric.lifetime_value(req)))
+    return jsonify((metric.customer_segmentation(req)))
+
+@metric_controller.route('/expenses', methods=['POST'])
+def get_expenses():
+    req = request.get_json()
+    return jsonify((metric.expenses(req)))
