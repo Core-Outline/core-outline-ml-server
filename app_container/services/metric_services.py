@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from app_container.repositories.pandas import convert_dict_to_df, convert_df_to_dict
 from config.app_configs import time_units, date_format, customer_segments
 from app_container.scripts.customer import createRFMTable, MRR_Class
@@ -101,3 +101,61 @@ class MetricService():
             dt, unit='D'), '%Y-%m-%d') for dt in df['date'].values]
         df['date'] = df['date'].astype("str")
         return convert_df_to_dict(df)
+    
+    def growthRate(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.rename(
+             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+        )
+        df.groupby("date").amount.sum().reset_index()
+        df['date'] = [datetime.strptime(dt, date_format)
+                      for dt in df['date']]
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.set_index('date')
+        df = df.amount.resample(time_units[metric['time_units']]).sum()
+        df = df.reset_index()
+        df = df.sort_values('date')
+        df['date'] = [datetime.strptime(np.datetime_as_string(
+            dt, unit='D'), '%Y-%m-%d') for dt in df['date'].values]
+        df['date'] = df['date'].astype("str")
+        if(len(df) <= 1):
+            return {'growth_rate': 0, 'average_growth_rate': 0}
+        growthRate = (df['amount'].values[-1] - df['amount'].values[-2])*100 / (df['amount'].values[len(df)-2]) 
+        averageGrowthRate = ((df['amount'].values[len(df)-1] - df['amount'].values[0]) / len(df)) - 1
+        return {
+            'growth_rate': growthRate if (df['amount'].values[len(df)-2]) > 0 else float('inf'), 
+            'average_growth_rate': averageGrowthRate
+            }
+
+    def contractionRecurringRevenue(self, metric):
+        data = self.recurringRevenue(metric=metric)
+        df = convert_dict_to_df(data)
+
+    def growthPeriod(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.rename(
+             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+        )
+        df.groupby("date").amount.sum().reset_index()
+        df['date'] = [datetime.strptime(dt, date_format)
+                      for dt in df['date']]
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.set_index('date')
+        df = df.amount.resample(time_units[metric['time_units']]).sum()
+        df = df.reset_index()
+        df = df.sort_values('date', ascending=False)
+        df['date'] = [datetime.strptime(np.datetime_as_string(
+            dt, unit='D'), '%Y-%m-%d') for dt in df['date'].values]
+        df['date'] = df['date'].astype("str")
+        curr = df['amount'].values[0]
+
+        for amt, dt in zip(df['amount'].values[1:],df['date'].values[1:]):
+            if(amt > curr):
+                return {"growth_period": str(((df['date'].values[0] - dt).astype('timedelta64[D]')))}
+            else:
+                curr = amt
+
+        return {"growth_period": str(((df['date'].values[0] - df['date']).astype('timedelta64[D]')))}
+
+
+    

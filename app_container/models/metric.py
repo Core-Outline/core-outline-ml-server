@@ -16,3 +16,9 @@ class Metric:
     
     def expenses(self, metric):
         return self.metricService.expenses(metric)
+
+    def growth_rate(self, metric):
+        return self.metricService.growthRate(metric)
+    
+    def growth_period(self, metric):
+        return self.metricService.growthPeriod(metric)

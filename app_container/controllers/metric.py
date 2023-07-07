@@ -20,3 +20,13 @@ def get_segments():
 def get_expenses():
     req = request.get_json()
     return jsonify((metric.expenses(req)))
+
+@metric_controller.route('/growth-rate', methods=['POST'])
+def get_growth_rate():
+    req = request.get_json()
+    return jsonify((metric.growth_rate(req)))
+
+@metric_controller.route('/growth-period', methods=['POST'])
+def get_growth_period():
+    req = request.get_json()
+    return jsonify((metric.growth_period(req)))
