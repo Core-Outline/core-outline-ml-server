@@ -22,3 +22,6 @@ class Metric:
     
     def growth_period(self, metric):
         return self.metricService.growthPeriod(metric)
+    
+    def forecast(self, metric):
+        return self.metricService.forecast(metric)

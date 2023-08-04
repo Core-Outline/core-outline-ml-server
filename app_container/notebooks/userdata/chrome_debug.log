@@ -1,0 +1,11 @@
+[6024:28916:0715/184552.956:WARNING:chrome_main_delegate.cc(593)] This is Chrome version 114.0.5735.199 (not a warning)
+[6024:28916:0715/184553.181:INFO:chrome_browser_cloud_management_controller.cc(167)] Starting CBCM Controller Initialization
+[6024:28916:0715/184553.181:INFO:chrome_browser_cloud_management_controller.cc(195)] No machine level policy manager exists.
+[6024:28916:0715/184609.788:INFO:CONSOLE(0)] "Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'.", source:  (0)
+[6024:28916:0715/184612.064:WARNING:controller_impl.cc(1188)] Background download complete, client: 6, completion type: 0, file size:265059
+[6024:28916:0715/184612.639:WARNING:controller_impl.cc(1188)] Background download complete, client: 6, completion type: 0, file size:5082
+[6024:28916:0715/184615.024:WARNING:controller_impl.cc(1188)] Background download complete, client: 6, completion type: 0, file size:883094
+[6024:28916:0715/184615.829:WARNING:controller_impl.cc(1188)] Background download complete, client: 6, completion type: 0, file size:9419
+[6024:28916:0715/184619.521:WARNING:controller_impl.cc(1188)] Background download complete, client: 6, completion type: 0, file size:45099
+[6024:28916:0715/184638.427:WARNING:controller_impl.cc(1188)] Background download complete, client: 6, completion type: 0, file size:34333197
+[6024:28916:0715/185121.357:WARNING:pref_notifier_impl.cc(41)] Pref observer for media_router.cast_allow_all_ips found at shutdown.

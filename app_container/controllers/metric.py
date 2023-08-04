@@ -30,3 +30,8 @@ def get_growth_rate():
 def get_growth_period():
     req = request.get_json()
     return jsonify((metric.growth_period(req)))
+
+@metric_controller.route('/get-forecast', methods=['POST'])
+def get_forecast():
+    req = request.get_json()
+    return jsonify((metric.forecast(req)))

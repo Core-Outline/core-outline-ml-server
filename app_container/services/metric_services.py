@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from app_container.repositories.pandas import convert_dict_to_df, convert_df_to_dict
 from config.app_configs import time_units, date_format, customer_segments
 from app_container.scripts.customer import createRFMTable, MRR_Class
+from app_container.scripts.forecast import make_forecast
 
 
 class MetricService():
@@ -157,5 +158,17 @@ class MetricService():
 
         return {"growth_period": str(((df['date'].values[0] - df['date']).astype('timedelta64[D]')))}
 
+    def forecast(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.rename(
+             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+        )
+        df = df[['date','amount']]
+        df['date'] = pd.DatetimeIndex(df['date'])
+        df['date'] = pd.to_datetime(df['date'])
+        df.sort_values("date", ascending=True)
+        df = df.set_index('date')
+        df = make_forecast(df, metric['steps'])
+        df.to_csv("2.csv")
+        return convert_df_to_dict(df)
 
-    
