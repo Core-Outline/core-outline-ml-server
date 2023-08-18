@@ -88,7 +88,8 @@ class MetricService():
     def expenses(self, metric):
         df = convert_dict_to_df(metric['data'])
         df = df.rename(
-             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+            columns={metric['date_column']: "date",
+                     metric['amount_column']: "amount"}
         )
         df.groupby("date").amount.sum().reset_index()
         df['date'] = [datetime.strptime(dt, date_format)
@@ -102,11 +103,12 @@ class MetricService():
             dt, unit='D'), '%Y-%m-%d') for dt in df['date'].values]
         df['date'] = df['date'].astype("str")
         return convert_df_to_dict(df)
-    
-    def growthRate(self, metric):
+
+    def revenueGrowthRate(self, metric):
         df = convert_dict_to_df(metric['data'])
         df = df.rename(
-             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+            columns={metric['date_column']: "date",
+                     metric['amount_column']: "amount"}
         )
         df.groupby("date").amount.sum().reset_index()
         df['date'] = [datetime.strptime(dt, date_format)
@@ -119,14 +121,73 @@ class MetricService():
         df['date'] = [datetime.strptime(np.datetime_as_string(
             dt, unit='D'), '%Y-%m-%d') for dt in df['date'].values]
         df['date'] = df['date'].astype("str")
-        if(len(df) <= 1):
+        df = df.loc[df['amount'] > 0]
+        valueGrowth = []
+        percentageGrowth = []
+        amount = df['amount'].values
+        # print(amount)
+        for i in range(len(amount)):
+            if (i == 0):
+                continue
+            print("--------------------------------->",
+                  amount[i] - amount[i-1])
+            valueGrowth.append(amount[i] -
+                               amount[i-1])
+            percentageGrowth.append(
+                ((amount[i] - amount[i-1]) / amount[i-1])*100)
+        df = pd.DataFrame()
+        df['RevenueGrowth'] = valueGrowth
+        df['PercentageRevenueGrowth'] = percentageGrowth
+
+        return convert_df_to_dict(df)
+
+    def revenuePerProduct(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.rename(
+            columns={
+                metric['amount_column']: "amount",
+                metric['product_column']: "product"}
+        )
+        df = df[['amount', 'product']]
+        df = df.groupby("product").amount.sum().reset_index()
+        return convert_df_to_dict(df)
+
+    def totalRevenue(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.rename(
+            columns={metric['amount_column']: "amount"}
+        )
+        df = df[['amount']]
+        totalRevenue = sum(df['amount'].values)
+        return {totalRevenue}
+
+    def growthRate(self, metric):
+        df = convert_dict_to_df(metric['data'])
+        df = df.rename(
+            columns={metric['date_column']: "date",
+                     metric['amount_column']: "amount"}
+        )
+        df.groupby("date").amount.sum().reset_index()
+        df['date'] = [datetime.strptime(dt, date_format)
+                      for dt in df['date']]
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.set_index('date')
+        df = df.amount.resample(time_units[metric['time_units']]).sum()
+        df = df.reset_index()
+        df = df.sort_values('date')
+        df['date'] = [datetime.strptime(np.datetime_as_string(
+            dt, unit='D'), '%Y-%m-%d') for dt in df['date'].values]
+        df['date'] = df['date'].astype("str")
+        if (len(df) <= 1):
             return {'growth_rate': 0, 'average_growth_rate': 0}
-        growthRate = (df['amount'].values[-1] - df['amount'].values[-2])*100 / (df['amount'].values[len(df)-2]) 
-        averageGrowthRate = ((df['amount'].values[len(df)-1] - df['amount'].values[0]) / len(df)) - 1
+        growthRate = (df['amount'].values[-1] - df['amount'].values[-2]
+                      )*100 / (df['amount'].values[len(df)-2])
+        averageGrowthRate = (
+            (df['amount'].values[len(df)-1] - df['amount'].values[0]) / len(df)) - 1
         return {
-            'growth_rate': growthRate if (df['amount'].values[len(df)-2]) > 0 else float('inf'), 
+            'growth_rate': growthRate if (df['amount'].values[len(df)-2]) > 0 else float('inf'),
             'average_growth_rate': averageGrowthRate
-            }
+        }
 
     def contractionRecurringRevenue(self, metric):
         data = self.recurringRevenue(metric=metric)
@@ -135,7 +196,8 @@ class MetricService():
     def growthPeriod(self, metric):
         df = convert_dict_to_df(metric['data'])
         df = df.rename(
-             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+            columns={metric['date_column']: "date",
+                     metric['amount_column']: "amount"}
         )
         df.groupby("date").amount.sum().reset_index()
         df['date'] = [datetime.strptime(dt, date_format)
@@ -150,8 +212,8 @@ class MetricService():
         df['date'] = df['date'].astype("str")
         curr = df['amount'].values[0]
 
-        for amt, dt in zip(df['amount'].values[1:],df['date'].values[1:]):
-            if(amt > curr):
+        for amt, dt in zip(df['amount'].values[1:], df['date'].values[1:]):
+            if (amt > curr):
                 return {"growth_period": str(((df['date'].values[0] - dt).astype('timedelta64[D]')))}
             else:
                 curr = amt
@@ -161,9 +223,10 @@ class MetricService():
     def forecast(self, metric):
         df = convert_dict_to_df(metric['data'])
         df = df.rename(
-             columns={metric['date_column']: "date", metric['amount_column']: "amount"}
+            columns={metric['date_column']: "date",
+                     metric['amount_column']: "amount"}
         )
-        df = df[['date','amount']]
+        df = df[['date', 'amount']]
         df['date'] = pd.DatetimeIndex(df['date'])
         df['date'] = pd.to_datetime(df['date'])
         df.sort_values("date", ascending=True)
@@ -171,4 +234,3 @@ class MetricService():
         df = make_forecast(df, metric['steps'])
         df.to_csv("2.csv")
         return convert_df_to_dict(df)
-
