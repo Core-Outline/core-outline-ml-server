@@ -4,8 +4,8 @@ import copy
 from datetime import datetime, timedelta
 from app_container.repositories.pandas import convert_dict_to_df, convert_df_to_dict
 from config.app_configs import time_units, date_format, customer_segments
-from app_container.scripts.customer import createRFMTable, MRR_Class
-from app_container.scripts.forecast import make_forecast
+from app_container.script.customer import createRFMTable, MRR_Class
+from app_container.script.forecast import make_forecast
 
 
 class MetricService():
